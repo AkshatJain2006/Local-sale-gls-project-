@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: local-sale-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: MONGODB_URI
+        sync: false        # You paste the real value in Render dashboard
+      - key: PORT
+        value: 5000

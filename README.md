@@ -15,3 +15,55 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+========================================================================================
+
+
+
+local_sale/
+│
+├── android/
+├── ios/
+├── lib/
+│   │
+│   ├── main.dart
+│   │
+│   ├── screens/
+│   │
+│   ├── widgets/
+│   │
+│   ├── models/
+│   │
+│   └── services/
+│
+├── test/
+├── pubspec.yaml
+└── ...
+
+
+======================================================================================================================
+
+
+
+lib/
+│
+├── main.dart
+│
+├── screens/
+│   ├── login_screen.dart
+│   ├── dashboard_screen.dart
+│   ├── inventory_screen.dart
+│   └── ...
+│
+├── widgets/
+│   ├── custom_button.dart
+│   ├── dashboard_card.dart
+│   ├── product_card.dart
+│   └── ...
+│
+├── models/
+│   ├── product.dart
+│   ├── sale.dart
+│   └── customer.dart
+│
+└── services/
+    └── api_service.dart

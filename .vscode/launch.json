@@ -1,0 +1,33 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Local Sale App (Flutter)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart"
+    },
+    {
+      "name": "Backend REST API (Node.js)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/server.js",
+      "restart": true,
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
+      "name": "Full Stack (Flutter + Backend)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "preLaunchTask": "Start Backend Server"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Run Both (Backend + Flutter)",
+      "configurations": ["Backend REST API (Node.js)", "Local Sale App (Flutter)"]
+    }
+  ]
+}
