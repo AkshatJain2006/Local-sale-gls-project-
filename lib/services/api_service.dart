@@ -8,9 +8,7 @@ class ApiService {
   factory ApiService() => _instance;
   ApiService._internal();
 
-  // Replace with your Render URL after deploying, e.g.:
-  // 'https://local-sale-api.onrender.com/api'
-  String baseUrl = 'https://local-sale-api.onrender.com/api';
+  String baseUrl = 'https://local-sale-gls-project.onrender.com/api';
   bool isOnline = false;
 
   Future<bool> checkHealth() async {

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'screens/login_screen.dart';
 import 'services/settings_service.dart';
+import 'services/auth_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SettingsService().load();
+  await AuthService().load();
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
   };

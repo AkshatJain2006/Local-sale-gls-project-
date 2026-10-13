@@ -1,4 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:syncfusion_flutter_xlsio/xlsio.dart' as xlsio;
 import '../services/data_service.dart';
 import '../models/sale.dart';
 import '../models/product.dart';
@@ -27,6 +31,123 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   void _refresh() {
     if (mounted) setState(() {});
+  }
+
+  bool _isExporting = false;
+
+  Future<void> _exportReport(String period, List<Sale> sales) async {
+    if (sales.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('No sales data in this period to export.'),
+        backgroundColor: Colors.orange,
+      ));
+      return;
+    }
+    setState(() => _isExporting = true);
+    try {
+      final wb = xlsio.Workbook();
+      final sheet = wb.worksheets[0];
+      sheet.name = period.replaceAll(' ', '_');
+
+      // ── Summary block ────────────────────────────────────────────
+      final revenue = _revenue(sales);
+      final profit = _profit(sales);
+      final units = _unitsSold(sales);
+      final top = _topProduct(sales);
+
+      void summaryRow(int row, String label, String value, String hex) {
+        final lCell = sheet.getRangeByIndex(row, 1);
+        final vCell = sheet.getRangeByIndex(row, 2);
+        lCell.setText(label);
+        lCell.cellStyle.bold = true;
+        lCell.cellStyle.backColor = hex;
+        lCell.cellStyle.fontColor = '#FFFFFF';
+        vCell.setText(value);
+        vCell.cellStyle.bold = true;
+      }
+
+      sheet.getRangeByIndex(1, 1).setText('REPORT PERIOD');
+      sheet.getRangeByIndex(1, 2).setText(period);
+      sheet.getRangeByIndex(1, 1).cellStyle.bold = true;
+      summaryRow(2, 'Gross Revenue', 'Rs.${revenue.toStringAsFixed(2)}', '#1565C0');
+      summaryRow(3, 'Net Profit', 'Rs.${profit.toStringAsFixed(2)}', '#2E7D32');
+      summaryRow(4, 'Units Sold', '$units', '#E65100');
+      summaryRow(5, 'Transactions', '${sales.length}', '#6A1B9A');
+      summaryRow(6, 'Top Product', top, '#00897B');
+
+      // ── Transactions header ──────────────────────────────────────
+      const headers = [
+        'Invoice No', 'Date', 'Time', 'Customer', 'Phone',
+        'Payment Method', 'Subtotal', 'Discount', 'Total',
+        'Paid', 'Balance Due', 'Status', 'Cashier', 'Items'
+      ];
+      for (var i = 0; i < headers.length; i++) {
+        final cell = sheet.getRangeByIndex(8, i + 1);
+        cell.setText(headers[i]);
+        cell.cellStyle.bold = true;
+        cell.cellStyle.backColor = '#1565C0';
+        cell.cellStyle.fontColor = '#FFFFFF';
+      }
+
+      // ── Transaction rows ─────────────────────────────────────────
+      for (var r = 0; r < sales.length; r++) {
+        final s = sales[r];
+        final row = r + 9;
+        final itemNames = s.items.map((i) => '${i.productName} x${i.qty}').join(', ');
+        sheet.getRangeByIndex(row, 1).setText(s.invoiceNo);
+        sheet.getRangeByIndex(row, 2).setText(
+            '${s.date.day.toString().padLeft(2, '0')}/${s.date.month.toString().padLeft(2, '0')}/${s.date.year}');
+        sheet.getRangeByIndex(row, 3).setText(
+            '${s.date.hour.toString().padLeft(2, '0')}:${s.date.minute.toString().padLeft(2, '0')}');
+        sheet.getRangeByIndex(row, 4).setText(s.customerName);
+        sheet.getRangeByIndex(row, 5).setText(s.customerPhone);
+        sheet.getRangeByIndex(row, 6).setText(s.paymentMethod);
+        sheet.getRangeByIndex(row, 7).setNumber(s.subtotal);
+        sheet.getRangeByIndex(row, 8).setNumber(s.discount);
+        sheet.getRangeByIndex(row, 9).setNumber(s.total);
+        sheet.getRangeByIndex(row, 10).setNumber(s.paid);
+        sheet.getRangeByIndex(row, 11).setNumber(s.due);
+        final statusCell = sheet.getRangeByIndex(row, 12);
+        statusCell.setText(s.paymentStatus);
+        statusCell.cellStyle.fontColor = s.paymentStatus == 'Paid'
+            ? '#2E7D32'
+            : s.paymentStatus == 'Partially Paid'
+                ? '#E65100'
+                : '#C62828';
+        sheet.getRangeByIndex(row, 13).setText(s.cashier);
+        sheet.getRangeByIndex(row, 14).setText(itemNames);
+      }
+
+      for (var i = 1; i <= headers.length; i++) {
+        sheet.autoFitColumn(i);
+      }
+
+      final bytes = wb.saveAsStream();
+      wb.dispose();
+
+      final dir = await getTemporaryDirectory();
+      final now = DateTime.now();
+      final fileName =
+          'LocalSale_${period.replaceAll(' ', '_')}_${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}.xlsx';
+      final file = File('${dir.path}/$fileName');
+      await file.writeAsBytes(bytes, flush: true);
+
+      if (!mounted) return;
+      await Share.shareXFiles(
+        [XFile(file.path,
+            mimeType:
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')],
+        subject: 'Local Sale — $period Report ($fileName)',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Export failed: $e'),
+        backgroundColor: Colors.red,
+      ));
+    } finally {
+      if (mounted) setState(() => _isExporting = false);
+    }
   }
 
   // --- Real Data Calculations ---
@@ -147,16 +268,28 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ],
           ),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.download),
-              tooltip: 'Export Report',
-              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Export feature coming in Phase 2'),
-                  backgroundColor: Colors.orange,
-                ),
-              ),
-            ),
+            if (_isExporting)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Center(
+                    child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white))),
+              )
+            else
+              Builder(builder: (ctx) {
+                final tabIndex = DefaultTabController.of(ctx).index;
+                final periods = ['Today', 'This Week', 'This Month'];
+                final salesLists = [_todaySales, _weeklySales, _monthlySales];
+                return IconButton(
+                  icon: const Icon(Icons.download),
+                  tooltip: 'Export to Excel',
+                  onPressed: () => _exportReport(
+                      periods[tabIndex], salesLists[tabIndex]),
+                );
+              }),
           ],
         ),
         body: TabBarView(

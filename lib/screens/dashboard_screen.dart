@@ -14,11 +14,13 @@ import 'login_screen.dart';
 class DashboardScreen extends StatefulWidget {
   final String role;
   final String userName;
+  final String userId;
 
   const DashboardScreen({
     super.key,
     this.role = 'admin',
     this.userName = 'Admin User',
+    this.userId = '',
   });
 
   @override
@@ -53,10 +55,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _HomeView(
         role: widget.role,
         userName: widget.userName,
+        userId: widget.userId,
         onNavigateToTab: (tabIndex) => setState(() => _idx = tabIndex),
       ),
       InventoryScreen(role: widget.role),
-      const SalesScreen(),
+      SalesScreen(cashierName: widget.userName, cashierId: widget.userId),
       CustomersScreen(role: widget.role),
       if (_isAdmin) const ReportsScreen(),
       SettingsScreen(role: widget.role),
@@ -113,8 +116,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Column(
                   children: [
-                    const Icon(Icons.storefront_rounded,
-                        color: Color(0xFF1565C0), size: 36),
+                const Image(image: AssetImage('assets/logo.png'), width: 36, height: 36),
                     const SizedBox(height: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -185,11 +187,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
 class _HomeView extends StatelessWidget {
   final String role;
   final String userName;
+  final String userId;
   final Function(int tabIndex) onNavigateToTab;
 
   const _HomeView({
     required this.role,
     required this.userName,
+    required this.userId,
     required this.onNavigateToTab,
   });
 

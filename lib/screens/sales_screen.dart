@@ -27,7 +27,13 @@ Widget _statusBadge(String status) {
 }
 
 class SalesScreen extends StatefulWidget {
-  const SalesScreen({super.key});
+  final String cashierName;
+  final String cashierId;
+  const SalesScreen({
+    super.key,
+    this.cashierName = 'Admin',
+    this.cashierId = '',
+  });
 
   @override
   State<SalesScreen> createState() => _SalesScreenState();
@@ -191,6 +197,7 @@ class _SalesScreenState extends State<SalesScreen> {
       tax: 0,
       paymentMethod: _selectedPaymentMethod,
       paid: _amountPaid,
+      cashier: widget.cashierName,
     );
 
     _dataService.addSale(sale);
@@ -1018,53 +1025,55 @@ class _SalesScreenState extends State<SalesScreen> {
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text('Collect Payment — ${sale.invoiceNo}'),
-          content: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Customer: ${sale.customerName}'),
-                Text('Total: ₹${sale.total.toStringAsFixed(2)}'),
-                Text('Already Paid: ₹${sale.paid.toStringAsFixed(2)}',
-                    style: const TextStyle(color: Colors.green)),
-                Text(
-                  'Balance Due: ₹${sale.due.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                      color: Colors.red, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: amtCtrl,
-                  keyboardType: TextInputType.number,
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    labelText: 'Amount Received (₹)',
-                    hintText: sale.due.toStringAsFixed(0),
-                    border: const OutlineInputBorder(),
-                    isDense: true,
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Customer: ${sale.customerName}'),
+                  Text('Total: ₹${sale.total.toStringAsFixed(2)}'),
+                  Text('Already Paid: ₹${sale.paid.toStringAsFixed(2)}',
+                      style: const TextStyle(color: Colors.green)),
+                  Text(
+                    'Balance Due: ₹${sale.due.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                        color: Colors.red, fontWeight: FontWeight.bold),
                   ),
-                  validator: (v) {
-                    final amt = double.tryParse(v ?? '');
-                    if (amt == null || amt <= 0) return 'Enter a valid amount';
-                    if (amt > sale.due + 0.001) {
-                      return 'Cannot exceed balance due (₹${sale.due.toStringAsFixed(2)})';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 6,
-                  children: ['Cash', 'UPI', 'Card'].map((m) {
-                    return ChoiceChip(
-                      label: Text(m, style: const TextStyle(fontSize: 11)),
-                      selected: method == m,
-                      onSelected: (_) => setDlg(() => method = m),
-                    );
-                  }).toList(),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: amtCtrl,
+                    keyboardType: TextInputType.number,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      labelText: 'Amount Received (₹)',
+                      hintText: sale.due.toStringAsFixed(0),
+                      border: const OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    validator: (v) {
+                      final amt = double.tryParse(v ?? '');
+                      if (amt == null || amt <= 0) return 'Enter a valid amount';
+                      if (amt > sale.due + 0.001) {
+                        return 'Cannot exceed balance due (₹${sale.due.toStringAsFixed(2)})';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 6,
+                    children: ['Cash', 'UPI', 'Card'].map((m) {
+                      return ChoiceChip(
+                        label: Text(m, style: const TextStyle(fontSize: 11)),
+                        selected: method == m,
+                        onSelected: (_) => setDlg(() => method = m),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
             ),
           ),
           actions: [
